@@ -173,21 +173,43 @@ def show():
     """)
     st.markdown(html_content, unsafe_allow_html=True)
 
+    # --- CÁLCULO DO NOME DO USUÁRIO ---
+    # Pegamos o nome da aba user_profile
+    user_name = df_profile.iloc[0]['name'] if not df_profile.empty else "Driver"
+
+    # --- MENSAGEM PERSONALIZADA (RADIO CHECK) ---
+    # 1. Importa a fonte de ícones (coloque isso no topo da função ou do script)
+    st.markdown('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />', unsafe_allow_html=True)
+
+    # 2. Renderiza a linha completa
+    st.markdown(f"""
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 20px;">
+            <span class="material-symbols-outlined" style="color: {THEME['accent_1']}; font-size: 24px;">
+                graphic_eq
+            </span>
+            <span style="color: {THEME['accent_1']}; font-weight: bold; letter-spacing: 1.5px; font-size: 13px; text-transform: uppercase; white-space: nowrap;">
+                Radio Check: Lucca
+            </span>
+        </div>
+        <h3 style="margin-top: 5px; margin-bottom: 20px; font-size: 24px; font-weight: 700;">
+            What's the strategy for now?
+        </h3>
+    """, unsafe_allow_html=True)
+
     # --- QUICK ACTIONS ---
-    st.write("### Quick Actions")
     c1, c2, c3 = st.columns(3)
     
     with c1:
-        if st.button("➕ Expense", use_container_width=True):
+        if st.button("➕ EXPENSE", use_container_width=True, key="action_exp"):
             st.session_state.selection = "Novo Gasto"
             st.rerun()
     with c2:
-        if st.button("📄 Statement", use_container_width=True):
+        if st.button("📄 HISTORY", use_container_width=True, key="action_sta"):
             st.session_state.selection = "Statement"
             st.rerun()
     with c3:
-        if st.button("💳 Cards", use_container_width=True):
-            st.session_state.selection = "Cards"
+        if st.button("⚙️ PROFILE", use_container_width=True, key="action_profile"):
+            st.session_state.selection = "Profile"
             st.rerun()
 
     st.divider()
