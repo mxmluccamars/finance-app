@@ -6,9 +6,13 @@ st.set_page_config(page_title="RBR Finance", layout="wide", page_icon="🏎️")
 
 st.markdown("""
     <style>
-        [data-testid="stSidebar"] {display: none;} /* Esconde a sidebar */
-        #MainMenu {visibility: hidden;} /* Esconde o menu de 3 pontinhos */
-        header {visibility: hidden;} /* Esconde o header do Streamlit */
+        /* Esconde apenas o botão da Sidebar e o rodapé 'Made with Streamlit' */
+        [data-testid="stSidebarNav"] {display: none;}
+        [data-testid="stSidebar"] {display: none;}
+        footer {visibility: hidden;}
+        
+        /* Mantém o header mas remove a decoração colorida do topo */
+        header {background-color: rgba(0,0,0,0) !important;}
     </style>
 """, unsafe_allow_html=True)
 

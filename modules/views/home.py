@@ -196,23 +196,29 @@ def show():
         </h3>
     """, unsafe_allow_html=True)
 
-    # --- QUICK ACTIONS ---
-    c1, c2, c3 = st.columns(3)
-    
-    with c1:
-        if st.button("➕ EXPENSE", use_container_width=True, key="action_exp"):
+    # --- QUICK ACTIONS AREA ---
+    # Criando as 3 colunas para os botões principais
+    col_pit, col_telemetry, col_setup = st.columns(3)
+
+    with col_pit:
+        # PIT STOP = Adicionar transação (onde o carro para para se reabastecer)
+        if st.button("🛠️\nPIT STOP", use_container_width=True, key="btn_pit", help="Add new transaction"):
             st.session_state.selection = "Novo Gasto"
             st.rerun()
-    with c2:
-        if st.button("📄 HISTORY", use_container_width=True, key="action_sta"):
+
+    with col_telemetry:
+        # TELEMETRY = Histórico/Extrato (onde analisamos os dados da corrida)
+        if st.button("📊\nDATA LOG", use_container_width=True, key="btn_telemetry", help="View history"):
             st.session_state.selection = "Statement"
             st.rerun()
-    with c3:
-        if st.button("⚙️ PROFILE", use_container_width=True, key="action_profile"):
+
+    with col_setup:
+        # SETUP = Configurações/Cartões (ajustes finos do carro)
+        if st.button("🔧\nSETUP", use_container_width=True, key="btn_setup", help="Manage cards and profile"):
             st.session_state.selection = "Profile"
             st.rerun()
 
-    st.divider()
+    st.markdown("---") # Divisor para a próxima seção
 
     # --- RECENT ACTIVITY ---
     st.write("### Recent Activity")
