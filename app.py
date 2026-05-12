@@ -30,8 +30,8 @@ elif st.session_state.selection == "Statement":
 elif st.session_state.selection == "Methods":
     methods.show()
 
-# # Botão de Voltar Global (opcional para telas que não sejam a Home)
-# if st.session_state.selection != "Home":
-#     if st.button("⬅ Back to Home"):
-#         st.session_state.selection = "Home"
-#         st.rerun()
+# Botão de Voltar Global (opcional para telas que não sejam a Home)
+if st.session_state.selection != "Home":
+    if st.button("⬅ Back to Home"):
+        st.session_state.selection = "Home"
+        st.rerun()

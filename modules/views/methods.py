@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from streamlit_gsheets import GSheetsConnection
 from modules.utils import THEME
+from modules.views import method_detail
 
 def show():
     conn = st.connection("gsheets", type=GSheetsConnection)
@@ -20,41 +21,47 @@ def show():
         <style>
         .block-container {{ padding-top: 1.5rem !important; }}
         
-        /* Estilização do Container do Card */
+        /* Container precisa ser relativo para o botão absoluto se ancorar nele */
         .card-container {{
             position: relative;
+            height: 150px;
             margin-bottom: 20px;
         }}
 
-        /* O botão invisível que cobre o card todo */
-        div.stButton > button {{
-            width: 100%;
-            height: 150px; /* Altura do card */
-            background: transparent !important;
-            border: none !important;
-            color: transparent !important;
-            position: absolute;
-            z-index: 10;
-        }}
-
-        /* O visual do card que fica por baixo do botão */
+        /* O visual do card que fica NO FUNDO */
         .method-card-visual {{
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
             padding: 20px;
             border-radius: 15px;
-            height: 150px;
             border: 1px solid rgba(255,255,255,0.1);
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             transition: 0.3s;
+            z-index: 1; /* Fica atrás */
         }}
-        .method-card-visual:hover {{
+
+        /* O botão invisível que fica NA FRENTE de tudo */
+        div.stButton > button {{
+            width: 100%;
+            height: 150px;
+            background: transparent !important;
+            border: none !important;
+            color: transparent !important;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 100; /* Z-index alto para garantir o clique */
+            cursor: pointer;
+        }}
+
+        /* Efeito de hover simulado no container quando o botão recebe foco */
+        .card-container:hover .method-card-visual {{
             transform: translateY(-5px);
             box-shadow: 0 10px 20px rgba(0,0,0,0.4);
             border: 1px solid rgba(255,255,255,0.3);
         }}
         </style>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     """, unsafe_allow_html=True)
 
     if st.session_state.method_focus is None:
@@ -98,34 +105,4 @@ def show():
                     st.rerun()
 
     else:
-        # --- TELA DE DETALHES (DRILL-DOWN) ---
-        m_id = st.session_state.method_focus
-        m_row = df_methods[df_methods['id'] == m_id].iloc[0]
-
-        # Botão de voltar estilizado (como o do Paddock)
-        if st.button("⬅️ BACK TO METHODS"):
-            st.session_state.method_focus = None
-            st.rerun()
-
-        st.markdown(f"### 🔍 Telemetry: {m_row['name']}")
-        
-        df_full = df_trans[df_trans['method_id'] == m_id].merge(df_cats, left_on='cat_id', right_on='id', suffixes=('', '_cat'))
-        df_full['date'] = pd.to_datetime(df_full['date'])
-        df_full = df_full.sort_values('date', ascending=False)
-
-        if df_full.empty:
-            st.info("Nenhuma transação registrada.")
-        else:
-            for _, row in df_full.iterrows():
-                st.markdown(f"""
-                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <div style="display: flex; align-items: center; gap: 12px;">
-                            <span class="material-symbols-outlined" style="color: {row['color']}; font-size: 24px;">{row['icon']}</span>
-                            <div>
-                                <div style="font-size: 14px; font-weight: 500;">{row['desc']}</div>
-                                <div style="font-size: 10px; color: gray;">{row['date'].strftime('%d %b')}</div>
-                            </div>
-                        </div>
-                        <div style="font-weight: bold;">R$ {row['amount']:,.2f}</div>
-                    </div>
-                """, unsafe_allow_html=True)
+       method_detail.show(st.session_state.method_focus)
