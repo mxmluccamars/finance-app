@@ -133,8 +133,8 @@ def show():
         if st.button("📊\nDATA LOG", use_container_width=True, key="btn_telemetry"):
             st.session_state.selection = "Statement"; st.rerun()
     with col_setup:
-        if st.button("🔧\nSETUP", use_container_width=True, key="btn_setup"):
-            st.session_state.selection = "Profile"; st.rerun()
+        if st.button("🔧\Tires", use_container_width=True, key="btn_setup"):
+            st.session_state.selection = "Methods"; st.rerun()
 
     # --- RECENT ACTIVITY (DYNAMIC COLORS & ICONS) ---
     st.write("### Recent Activity")
