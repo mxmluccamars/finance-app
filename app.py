@@ -1,5 +1,5 @@
 import streamlit as st
-from modules.views import home, entry, history
+from modules.views import home, entry, statement
 
 # Esconde a barra lateral nativa e o menu do topo para parecer um app
 st.set_page_config(page_title="RBR Finance", layout="wide", page_icon="🏎️")
@@ -26,7 +26,7 @@ if st.session_state.selection == "Home":
 elif st.session_state.selection == "Novo Gasto":
     entry.show()
 elif st.session_state.selection == "Statement":
-    history.show()
+    statement.show()
 
 # Botão de Voltar Global (opcional para telas que não sejam a Home)
 if st.session_state.selection != "Home":
