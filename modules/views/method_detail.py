@@ -1,24 +1,18 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
-from streamlit_gsheets import GSheetsConnection
 from modules.utils import THEME
+from modules.database import FinancialDB
 
 def show(method_id):
-    # --- CONEXÃO E DADOS ---
-    conn = st.connection("gsheets", type=GSheetsConnection)
+    # --- ENGINE DE DADOS (Consumindo Cache) ---
+    db = FinancialDB()
+    df_full = db.get_full_telemetry() # Já possui todos os joins e real_amount
     
-    # Buscamos os dados necessários para o cruzamento
-    df_trans = conn.read(worksheet="transactions", ttl="10s")
-    df_methods = conn.read(worksheet="payment_methods", ttl="1h")
-    df_cats = conn.read(worksheet="categories", ttl="1h")
-    df_types = conn.read(worksheet="payment_types", ttl="1h")
-
-    # Obtemos as informações específicas deste método
+    # Buscamos as informações do método específico na tabela de referência
+    df_methods = db.get_methods()
     method_info = df_methods[df_methods['id'] == method_id].iloc[0]
-    method_type = df_types[df_types['id'] == method_info['type_id']].iloc[0]
     
-    # --- UI: CABEÇALHO DO SCANNER ---
+    # --- UI: CABEÇALHO PERSONALIZADO ---
     color = method_info.get('color', THEME['accent_1'])
     
     st.markdown(f"""
@@ -41,17 +35,15 @@ def show(method_id):
         }}
         </style>
         <div class="detail-header">
-            <div class="method-badge">{method_type['name']}</div>
+            <div class="method-badge">Telemetry Analysis</div>
             <h2 style="margin: 5px 0 0 0; color: white;">{method_info['name']}</h2>
-            <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Detailed Stint Analysis</div>
+            <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Detailed Stint Overview</div>
         </div>
     """, unsafe_allow_html=True)
 
     # --- PROCESSAMENTO ---
-    # Filtramos e cruzamos com as categorias para exibir ícones e cores
-    df_filtered = df_trans[df_trans['method_id'] == method_id].copy()
-    df_filtered = df_filtered.merge(df_cats, left_on='cat_id', right_on='id', suffixes=('', '_cat'))
-    df_filtered['date'] = pd.to_datetime(df_full['date'])
+    # Filtramos as transações apenas deste método
+    df_filtered = df_full[df_full['method_id'] == method_id].copy()
     df_filtered = df_filtered.sort_values('date', ascending=False)
 
     # --- LISTAGEM DE TRANSAÇÕES ---
@@ -61,21 +53,21 @@ def show(method_id):
         st.write(f"### Activity Log ({len(df_filtered)} entries)")
         
         for _, row in df_filtered.iterrows():
-            # Lógica de cor baseada no tipo do método (In vs Out)
-            is_positive = str(method_type['impact']).strip().lower() in ['in', 'inflow']
+            # Usamos a lógica de sinal já processada pela Engine
+            is_positive = row['real_amount'] >= 0
             val_color = "#2ECC71" if is_positive else "#FFFFFF"
             val_prefix = "+" if is_positive else "-"
 
             st.markdown(f"""
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <span class="material-symbols-outlined" style="color: {row['color']}; font-size: 28px;">
+                        <span class="material-symbols-outlined" style="color: {row['color_cat']}; font-size: 28px;">
                             {row['icon']}
                         </span>
                         <div>
                             <div style="font-weight: 500; font-size: 16px; color: white;">{row['desc']}</div>
                             <div style="font-size: 11px; color: gray;">
-                                {row['date'].strftime('%d %b, %Y')} • {row['name']}
+                                {row['date'].strftime('%d %b, %Y')} • {row['name_cat']}
                             </div>
                         </div>
                     </div>

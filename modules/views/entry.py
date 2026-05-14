@@ -1,16 +1,22 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from streamlit_gsheets import GSheetsConnection
 from modules.utils import THEME
+from modules.database import FinancialDB
 import time
 
 def show():
-    conn = st.connection("gsheets", type=GSheetsConnection)
+    # --- ENGINE DE DADOS (Centralizado) ---
+    db = FinancialDB()
     
-    # Carregamos as tabelas de referência
-    df_cats = conn.read(worksheet="categories", ttl="1h")
-    df_methods = conn.read(worksheet="payment_methods", ttl="1h")
+    # Carregamos apenas os dados estáticos necessários para os seletores (com cache de 1h)
+    df_cats = db.get_categories()
+    df_methods = db.get_methods()
+    
+    # Extraímos as opções únicas para os seletores a partir do DataFrame consolidado
+    # Isso garante que apenas categorias e métodos ativos apareçam
+    cat_options = df_cats['name'].tolist()
+    method_options = df_methods['name'].tolist()
     
     st.markdown(f"""
         <style>
@@ -42,13 +48,11 @@ def show():
 
         col1, col2 = st.columns(2)
         with col1:
-            # 2. MÉTODO DE PAGAMENTO (Define o fluxo automaticamente)
-            method_options = df_methods['name'].tolist()
+            # 2. MÉTODO DE PAGAMENTO
             method_selected = st.selectbox("Payment Method", options=method_options)
         
         with col2:
-            # 3. CATEGORIA (Skins, Fuel, Salary, etc.)
-            cat_options = df_cats['name'].tolist()
+            # 3. CATEGORIA
             category_selected = st.selectbox("Compound (Category)", options=cat_options)
 
         # 4. DESCRIÇÃO E DATA
@@ -59,13 +63,13 @@ def show():
 
         if submitted:
             if amount > 0 and description:
-                # --- BUSCA DE IDs (Mapeamento) ---
-                # Pegamos o ID do método e da categoria baseados no nome selecionado
+                # --- BUSCA DE IDs PARA INTEGRIDADE ---
+                # Buscamos os IDs correspondentes aos nomes selecionados no DataFrame mestre
                 m_id = df_methods[df_methods['name'] == method_selected]['id'].values[0]
                 c_id = df_cats[df_cats['name'] == category_selected]['id'].values[0]
 
                 new_entry = pd.DataFrame([{
-                    "id": int(time.time()), # Transaction ID
+                    "id": int(time.time()), 
                     "date": date.strftime("%Y-%m-%d"),
                     "desc": description,
                     "amount": amount,
@@ -74,17 +78,12 @@ def show():
                     "user_id": 1
                 }])
                 
-                try:
-                    # Lemos apenas para dar o append (usando ttl=0 para garantir que não pule IDs)
-                    df_existing = conn.read(worksheet="transactions", ttl=0)
-                    updated_df = pd.concat([df_existing, new_entry], ignore_index=True)
-                    conn.update(worksheet="transactions", data=updated_df)
-                    
-                    # Redirecionamento direto
+                # Usamos a função centralizada que já lida com update e cache clear
+                success = db.save_transaction(new_entry)
+                
+                if success:
                     st.session_state.selection = "Home"
                     st.rerun()
-                except Exception as e:
-                    st.error(f"Engine failure: {e}")
             else:
                 st.warning("Telemetry incomplete! Check amount and description.")
 

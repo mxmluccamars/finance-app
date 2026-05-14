@@ -1,70 +1,58 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-from streamlit_gsheets import GSheetsConnection
 from modules.utils import THEME
+from modules.database import FinancialDB
 import textwrap
 
 def show():
-    # --- CONEXÃO E DADOS (Sem Cache para atualização em tempo real) ---
-
-    CACHE_TIME = "10s"
-
-    conn = st.connection("gsheets", type=GSheetsConnection)
-    df_trans = conn.read(worksheet="transactions", ttl=CACHE_TIME)
-    df_methods = conn.read(worksheet="payment_methods", ttl=CACHE_TIME)
-    df_types = conn.read(worksheet="payment_types", ttl=CACHE_TIME)
-    df_cats = conn.read(worksheet="categories", ttl=CACHE_TIME)
-    df_profile = conn.read(worksheet="user_profile", ttl=CACHE_TIME)
+    # --- ENGINE DE DADOS (Centralizado) ---
+    db = FinancialDB()
+    df_full = db.get_full_telemetry()
+    df_profile = db.get_profile()
     
+    # Verificação de segurança caso o banco esteja vazio
+    if df_full.empty:
+        st.warning("No telemetry data found. Start your first stint! 🏎️")
+        if st.button("🛠️ Go to Pit Stop"):
+            st.session_state.selection = "Novo Gasto"
+            st.rerun()
+        return
+
+    # --- CONTROLO DE NAVEGAÇÃO DE DATA ---
     if 'view_date' not in st.session_state:
         st.session_state.view_date = datetime.now().replace(day=1)
 
-    # --- PROCESSAMENTO DA TELEMETRIA (O NOVO MOTOR) ---
-    # Unimos as tabelas para ter a visão completa (Transactions + Methods + Types)
-
-    
-
-    df_full = df_trans.merge(df_methods, left_on='method_id', right_on='id', suffixes=('', '_meth'))
-    df_full = df_full.merge(df_types, left_on='type_id', right_on='id', suffixes=('', '_type'))
-    df_full = df_full.merge(df_cats, left_on='cat_id', right_on='id', suffixes=('', '_cat'))
-    
-    df_full['date'] = pd.to_datetime(df_full['date'])
-    
-    # Criamos uma coluna de valor real (positivo ou negativo) para facilitar cálculos
-    df_full['real_amount'] = df_full.apply(
-        lambda x: x['amount'] if x['impact'] == 'in' else -x['amount'], axis=1
-    )
-
-    # --- CÁLCULOS GLOBAIS ---
+    # --- CÁLCULOS TÉCNICOS ---
+    # Net Worth Total (Independente do mês selecionado)
     net_worth = df_full['real_amount'].sum()
     
-    # Filtrando transações do mês selecionado
+    # Filtragem do Mês selecionado
     view_date = st.session_state.view_date
     df_month = df_full[(df_full['date'].dt.month == view_date.month) & 
                        (df_full['date'].dt.year == view_date.year)]
     
-    month_in = df_month[df_month['impact'] == 'in']['amount'].sum()
-    month_out = df_month[df_month['impact'] == 'out']['amount'].sum()
-    month_balance = df_full[df_full['date'].dt.to_period('M') == pd.to_datetime(view_date).to_period('M')]['real_amount'].sum()
+    # Métricas do Mês
+    month_out = df_month[df_month['real_amount'] < 0]['amount'].sum()
+    month_balance = df_month['real_amount'].sum()
     
-    budget_limit = float(df_profile.iloc[0]['monthly_budget_limit'])
+    # Budget (Vindo do Perfil)
+    budget_limit = float(df_profile.iloc[0]['monthly_budget_limit']) if not df_profile.empty else 0
     remaining_budget = budget_limit - month_out
 
-    # --- CSS E NAVEGAÇÃO (Mantidos do seu código) ---
+    # --- CSS E NAVEGAÇÃO ---
     st.markdown("""
         <style>
-        .block-container { padding-top: 2rem !important; padding-bottom: 0rem !important; }
+        .block-container { padding-top: 1.5rem !important; padding-bottom: 0rem !important; }
         div[data-testid="stColumn"] button[kind="secondary"] {
             border: none !important; background-color: transparent !important;
             box-shadow: none !important; color: white !important; padding: 0px !important;
-            min-height: 40px; display: flex; align-items: center; justify-content: center;
         }
-        div[data-testid="stColumn"] button p { font-size: 24px !important; margin: 0px !important; }
         .date-display { font-size: 20px; font-weight: 600; text-align: center; line-height: 40px; color: white; }
         </style>
     """, unsafe_allow_html=True)
 
+    # Seletor de Mês (Navegação da Temporada)
     c_prev, c_date, c_next = st.columns([0.5, 4, 0.5])
     with c_prev:
         if st.button("", icon=":material/chevron_left:", key="btn_prev"):
@@ -77,13 +65,13 @@ def show():
             st.session_state.view_date = (st.session_state.view_date + timedelta(days=32)).replace(day=1)
             st.rerun()
 
-    # --- UI: MAIN CARD (RBR STYLE) ---
+    # --- UI: MAIN CARD (RBR TELEMETRY) ---
     budget_usage_pct = min((month_out / budget_limit) * 100, 100) if budget_limit > 0 else 0
     budget_color = THEME['accent_2'] if month_out > budget_limit else THEME['accent_1']
     
-    # Lógica de rádio
     left_val_html = f"R$ {remaining_budget:,.2f} <span style='font-size: 12px; opacity: 0.7;'>left</span>"
     right_val_html = f"R$ {month_balance:,.2f}"
+    
     if df_month.empty:
         left_val_html = "<span style='font-size: 16px; opacity: 0.8;'>Clear track ahead...</span>"
         right_val_html = "<span style='font-size: 16px; font-style: italic;'>Standing by...</span>"
@@ -121,42 +109,43 @@ def show():
         </div>
     """), unsafe_allow_html=True)
 
-    # --- QUICK ACTIONS (Pit Stop, Data Log, Setup) ---
+    # --- QUICK ACTIONS ---
     st.markdown('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />', unsafe_allow_html=True)
-    st.markdown(f'<div style="display: flex; align-items: center; gap: 10px; margin-top: 20px;"><span class="material-symbols-outlined" style="color: {THEME["accent_1"]}; font-size: 24px;">graphic_eq</span><span style="color: {THEME["accent_1"]}; font-weight: bold; letter-spacing: 1.5px; font-size: 13px; text-transform: uppercase;">Radio Check: Lucca</span></div><h3 style="margin-top: 5px; margin-bottom: 20px; font-size: 24px; font-weight: 700;">What\'s the strategy?</h3>', unsafe_allow_html=True)
+    st.markdown(f'<div style="display: flex; align-items: center; gap: 10px; margin-top: 20px;"><span class="material-symbols-outlined" style="color: {THEME["accent_1"]}; font-size: 24px;">graphic_eq</span><span style="color: {THEME["accent_1"]}; font-weight: bold; letter-spacing: 1.5px; font-size: 13px; text-transform: uppercase;">Radio Check: Lucca</span></div>', unsafe_allow_html=True)
     
     col_pit, col_telemetry, col_setup = st.columns(3)
     with col_pit:
-        if st.button("🛠️\nPIT STOP", use_container_width=True, key="btn_pit"):
+        if st.button("🛠️\nPIT STOP", use_container_width=True):
             st.session_state.selection = "Novo Gasto"; st.rerun()
     with col_telemetry:
-        if st.button("📊\nDATA LOG", use_container_width=True, key="btn_telemetry"):
+        if st.button("📊\nDATA LOG", use_container_width=True):
             st.session_state.selection = "Statement"; st.rerun()
     with col_setup:
-        if st.button("🔧\Tires", use_container_width=True, key="btn_setup"):
+        if st.button("🔧\nTIRES", use_container_width=True):
             st.session_state.selection = "Methods"; st.rerun()
 
-    # --- RECENT ACTIVITY (DYNAMIC COLORS & ICONS) ---
+    # --- RECENT ACTIVITY ---
     st.write("### Recent Activity")
     recent = df_full.sort_values(by='date', ascending=False).head(5)
     
     for _, row in recent.iterrows():
-        # Usamos a cor da categoria e o ícone definido no Sheets
         cat_color = row['color_cat'] if row['color_cat'] else "#FFFFFF"
         cat_icon = row['icon'] if row['icon'] else "payments"
-        impact_color = "#2ECC71" if row['impact'] == "in" else THEME['accent_2']
+        # Usamos o sinal real do cálculo da engine
+        impact_color = "#2ECC71" if row['real_amount'] >= 0 else THEME['accent_2']
+        prefix = "+" if row['real_amount'] >= 0 else "-"
         
         st.markdown(f"""
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <span class="material-symbols-outlined" style="color: {cat_color}; font-size: 28px;">{cat_icon}</span>
                     <div>
-                        <div style="font-weight: 500; font-size: 15px;">{row['desc']}</div>
+                        <div style="font-weight: 500; font-size: 15px; color: white;">{row['desc']}</div>
                         <div style="font-size: 11px; color: gray;">{row['date'].strftime('%d %b')} • {row['name']}</div>
                     </div>
                 </div>
                 <div style="color: {impact_color}; font-weight: bold; font-size: 15px;">
-                    {"+" if row['impact'] == "in" else "-"} R$ {row['amount']:,.2f}
+                    {prefix} R$ {row['amount']:,.2f}
                 </div>
             </div>
         """, unsafe_allow_html=True)
