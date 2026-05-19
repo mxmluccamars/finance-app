@@ -52,6 +52,6 @@ elif st.session_state.selection == "Methods":
 
 # --- BOTÃO GLOBAL DE SYNC (OPCIONAL NA SIDEBAR INVISÍVEL OU RODAPÉ) ---
 # Se você quiser um botão de refresh que apareça em todas as telas:
-# if st.button("🔄 Sync Cloud"):
-#     st.cache_data.clear()
-#     st.rerun()
+if st.button("🔄 Sync Cloud"):
+    st.cache_data.clear()
+    st.rerun()
