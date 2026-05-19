@@ -6,12 +6,12 @@ from modules.database import FinancialDB
 import textwrap
 
 def show():
-    # --- ENGINE DE DADOS (Centralizado) ---
+    # DB engine
     db = FinancialDB()
     df_full = db.get_full_telemetry()
     df_profile = db.get_profile()
     
-    # Verificação de segurança caso o banco esteja vazio
+    # DB is null?
     if df_full.empty:
         st.warning("No telemetry data found. Start your first stint! 🏎️")
         if st.button("🛠️ Go to Pit Stop"):
@@ -19,51 +19,160 @@ def show():
             st.rerun()
         return
 
-    # --- CONTROLO DE NAVEGAÇÃO DE DATA ---
+    # date navegation
     if 'view_date' not in st.session_state:
         st.session_state.view_date = datetime.now().replace(day=1)
 
-    # --- CÁLCULOS TÉCNICOS ---
-    # Net Worth Total (Independente do mês selecionado)
+    # net worth total 
     net_worth = df_full['real_amount'].sum()
     
-    # Filtragem do Mês selecionado
+    # month filter
     view_date = st.session_state.view_date
-    df_month = df_full[(df_full['date'].dt.month == view_date.month) & 
+    df_month = df_full[(df_full['date'].dt.month == view_date.month) &
                        (df_full['date'].dt.year == view_date.year)]
     
-    # Métricas do Mês
+    # month metrics
     month_out = df_month[df_month['real_amount'] < 0]['amount'].sum()
     month_balance = df_month['real_amount'].sum()
     
-    # Budget (Vindo do Perfil)
+    # budget limit
     budget_limit = float(df_profile.iloc[0]['monthly_budget_limit']) if not df_profile.empty else 0
     remaining_budget = budget_limit - month_out
 
-    # --- CSS E NAVEGAÇÃO ---
+    # css
+
+    # --- CSS DO HEADER CENTRALIZADO (LOGO EXPANDIDO) ---
     st.markdown("""
         <style>
-        .block-container { padding-top: 1.5rem !important; padding-bottom: 0rem !important; }
-        div[data-testid="stColumn"] button[kind="secondary"] {
-            border: none !important; background-color: transparent !important;
-            box-shadow: none !important; color: white !important; padding: 0px !important;
+        /* Mantém o topo colado no limite da tela */
+        .block-container { 
+            padding-top: 0rem !important; 
         }
-        .date-display { font-size: 20px; font-weight: 600; text-align: center; line-height: 40px; color: white; }
+        
+        .rbr-logo-centered-wrapper {
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: 100% !important;
+            padding: 0px !important; 
+            margin-top: -10px !important; /* Ajustado para compensar a nova altura */
+            border-bottom: none !important;
+            margin-bottom: 20px !important; 
+        }
+        
+        .rbr-logo-img-centered {
+            /* AQUI: Aumentamos de 38px para 65px para dar mais presença na tela */
+            height: 65px !important; 
+            width: auto !important;
+            object-fit: contain;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
         </style>
     """, unsafe_allow_html=True)
 
-    # Seletor de Mês (Navegação da Temporada)
-    c_prev, c_date, c_next = st.columns([0.5, 4, 0.5])
+    # --- INJEÇÃO DO HTML RECALIBRADO ---
+    st.markdown("""
+        <div class="rbr-logo-centered-wrapper">
+            <img class="rbr-logo-img-centered" src="https://upload.wikimedia.org/wikipedia/commons/6/62/RED_BULL_LOGO_2026.svg?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original" alt="Red Bull Racing Logo">
+        </div>
+    """, unsafe_allow_html=True)
+
+    # --- CSS DEFINITIVO GRID RESPONSIVO (20% | 60% | 20%) ---
+    st.markdown("""
+        <style>
+        .block-container { padding-top: 1.5rem !important; padding-bottom: 0rem !important; }
+        
+        /* FORÇA O CONTAINER PAI A SER UM GRID RÍGIDO DE 3 COLUNAS
+           Garante que as proporções propostas (20% / 60% / 20%) sejam respeitadas 
+           mesmo em ecrãs extremamente estreitos, sem nunca quebrar linha.
+        */
+        div[data-testid="stHorizontalBlock"] {
+            display: grid !important;
+            grid-template-columns: 20% 60% 20% !important;
+            align-items: center !important;
+            gap: 4px !important;
+            width: 100% !important;
+        }
+
+        /* Anula o comportamento flex individual das colunas nativas do Streamlit */
+        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: none !important;
+            padding: 0px !important;
+            margin: 0px !important;
+        }
+
+        /* Estilização imersiva dos botões de navegação */
+        div[data-testid="stColumn"] button {
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            color: white !important; 
+            padding: 0px !important;
+            width: 100% !important;
+            min-height: 40px !important;
+            height: 40px !important;
+            border-radius: 8px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        div[data-testid="stColumn"] button:hover {
+            border-color: #FFCC00 !important;
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        /* Caixa central do display do mês */
+        .date-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            background-color: rgba(255, 255, 255, 0.02);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .date-display { 
+            font-size: 12px !important; /* Calibrado perfeitamente para caber 'SETEMBRO 2026' em telas pequenas */
+            font-weight: 700 !important; 
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: white; 
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Declaramos st.columns(3) para criar a infraestrutura de 3 colunas no HTML.
+    # O nosso CSS Grid injetado acima vai anular o comportamento padrão e assumir as rédeas.
+    c_prev, c_date, c_next = st.columns(3)
+    
     with c_prev:
-        if st.button("", icon=":material/chevron_left:", key="btn_prev"):
+        if st.button("◀", key="btn_prev"):
             st.session_state.view_date = (st.session_state.view_date - timedelta(days=1)).replace(day=1)
             st.rerun()
+            
     with c_date:
-        st.markdown(f"<div class='date-display'>{st.session_state.view_date.strftime('%B - %Y')}</div>", unsafe_allow_html=True)
+        st.markdown(f"""
+            <div class='date-container'>
+                <div class='date-display'>{st.session_state.view_date.strftime('%B %Y')}</div>
+            </div>
+        """, unsafe_allow_html=True)
+        
     with c_next:
-        if st.button("", icon=":material/chevron_right:", key="btn_next"):
+        if st.button("▶", key="btn_next"):
             st.session_state.view_date = (st.session_state.view_date + timedelta(days=32)).replace(day=1)
             st.rerun()
+
 
     # --- UI: MAIN CARD (RBR TELEMETRY) ---
     budget_usage_pct = min((month_out / budget_limit) * 100, 100) if budget_limit > 0 else 0
@@ -126,12 +235,11 @@ def show():
 
     # --- RECENT ACTIVITY ---
     st.write("### Recent Activity")
-    recent = df_full.sort_values(by='date', ascending=False).head(5)
+    recent = df_full.sort_values(by='date', ascending=False).head(10)
     
     for _, row in recent.iterrows():
         cat_color = row['color_cat'] if row['color_cat'] else "#FFFFFF"
         cat_icon = row['icon'] if row['icon'] else "payments"
-        # Usamos o sinal real do cálculo da engine
         impact_color = "#2ECC71" if row['real_amount'] >= 0 else THEME['accent_2']
         prefix = "+" if row['real_amount'] >= 0 else "-"
         

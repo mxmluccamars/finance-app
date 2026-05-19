@@ -9,21 +9,21 @@ st.set_page_config(
 )
 
 # --- CSS PARA ESCONDER ELEMENTOS NATIVOS E MELHORAR UX ---
-st.markdown("""
-    <style>
-        /* Esconde a barra lateral nativa e o cabeçalho padrão */
-        [data-testid="stSidebarNav"] {display: none;}
-        [data-testid="stSidebar"] {display: none;}
-        footer {visibility: hidden;}
-        header {background-color: rgba(0,0,0,0) !important;}
+# st.markdown("""
+#     <style>
+#         /* Esconde a barra lateral nativa e o cabeçalho padrão */
+#         [data-testid="stSidebarNav"] {display: none;}
+#         [data-testid="stSidebar"] {display: none;}
+#         footer {visibility: hidden;}
+#         header {background-color: rgba(0,0,0,0) !important;}
         
-        /* Ajuste de padding para telas mobile/compactas */
-        .block-container {
-            padding-top: 1rem;
-            padding-bottom: 5rem; /* Espaço para não cobrir o conteúdo com menus futuros */
-        }
-    </style>
-""", unsafe_allow_html=True)
+#         /* Ajuste de padding para telas mobile/compactas */
+#         .block-container {
+#             padding-top: 1rem;
+#             padding-bottom: 5rem; /* Espaço para não cobrir o conteúdo com menus futuros */
+#         }
+#     </style>
+# """, unsafe_allow_html=True)
 
 # --- GERENCIAMENTO DE NAVEGAÇÃO (SESSION STATE) ---
 if 'selection' not in st.session_state:
