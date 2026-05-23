@@ -44,7 +44,7 @@ if st.session_state.selection == "Home":
 elif st.session_state.selection == "Novo Gasto":
     entry.show()
     
-elif st.session_state.selection == "Statement":
+elif st.session_state.selection == "History":
     history.show()
     
 elif st.session_state.selection == "Methods":

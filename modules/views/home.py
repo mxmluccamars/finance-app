@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
-from modules.utils import THEME
+from modules.utils import THEME, render_quick_actions
 from modules.database import FinancialDB
+
 import textwrap
 
 def show():
@@ -219,19 +220,7 @@ def show():
     """), unsafe_allow_html=True)
 
     # --- QUICK ACTIONS ---
-    st.markdown('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />', unsafe_allow_html=True)
-    st.markdown(f'<div style="display: flex; align-items: center; gap: 10px; margin-top: 20px;"><span class="material-symbols-outlined" style="color: {THEME["accent_1"]}; font-size: 24px;">graphic_eq</span><span style="color: {THEME["accent_1"]}; font-weight: bold; letter-spacing: 1.5px; font-size: 13px; text-transform: uppercase;">Radio Check: Lucca</span></div>', unsafe_allow_html=True)
-    
-    col_pit, col_telemetry, col_setup = st.columns(3)
-    with col_pit:
-        if st.button("🛠️\nPIT STOP", use_container_width=True):
-            st.session_state.selection = "Novo Gasto"; st.rerun()
-    with col_telemetry:
-        if st.button("📊\nDATA LOG", use_container_width=True):
-            st.session_state.selection = "Statement"; st.rerun()
-    with col_setup:
-        if st.button("🔧\nTIRES", use_container_width=True):
-            st.session_state.selection = "Methods"; st.rerun()
+    render_quick_actions()
 
     # --- RECENT ACTIVITY ---
     st.write("### Recent Activity")
