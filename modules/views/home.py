@@ -80,99 +80,124 @@ def show():
         </div>
     """, unsafe_allow_html=True)
 
-    # --- CSS DEFINITIVO GRID RESPONSIVO (20% | 60% | 20%) ---
+    # --- CSS DE NAVEGAÇÃO DE COCKPIT (BLINDAGEM TOTAL E PERSONALIZAÇÃO PIRELLI) ---
     st.markdown("""
         <style>
-        .block-container { padding-top: 1.5rem !important; padding-bottom: 0rem !important; }
-        
-        /* FORÇA O CONTAINER PAI A SER UM GRID RÍGIDO DE 3 COLUNAS
-           Garante que as proporções propostas (20% / 60% / 20%) sejam respeitadas 
-           mesmo em ecrãs extremamente estreitos, sem nunca quebrar linha.
-        */
-        div[data-testid="stHorizontalBlock"] {
-            display: grid !important;
-            grid-template-columns: 20% 60% 20% !important;
-            align-items: center !important;
-            gap: 4px !important;
-            width: 100% !important;
-        }
-
-        /* Anula o comportamento flex individual das colunas nativas do Streamlit */
-        div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
-            width: 100% !important;
-            max-width: 100% !important;
-            flex: none !important;
-            padding: 0px !important;
-            margin: 0px !important;
-        }
-
-        /* Estilização imersiva dos botões de navegação */
-        div[data-testid="stColumn"] button {
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            background-color: rgba(255, 255, 255, 0.05) !important;
-            color: white !important; 
-            padding: 0px !important;
-            width: 100% !important;
-            min-height: 40px !important;
-            height: 40px !important;
-            border-radius: 8px !important;
+        /* Trava a linha horizontal de navegação na proporção exata e zero gap */
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] {
             display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            width: 100% !important;
+            gap: 0px !important; /* Sem espaço entre as pílulas */
+            align-items: center !important;
+            padding: 0px !important;
+        }
+
+        /* Proporções rígidas para colar as setas nas extremidades (15% | 70% | 15%) */
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) { flex: 1 1 15% !important; max-width: 15% !important; width: 15% !important; }
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) { flex: 1 1 70% !important; max-width: 70% !important; width: 70% !important; }
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(3) { flex: 1 1 15% !important; max-width: 15% !important; width: 15% !important; }
+
+        /* Estilização base que anula qualquer herança de outros blocos */
+        .scuderia-nav-row div[data-testid="stColumn"] button,
+        .scuderia-nav-row div[data-testid="stColumn"] button:disabled {
+            height: 46px !important;
+            min-height: 46px !important;
+            background-color: #061D39 !important; /* Azul Oficial RBR */
+            border-radius: 0px !important;
+            display: flex !important;
+            flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
+            box-shadow: none !important;
+            padding: 0px !important;
+            color: transparent !important; /* Esconde o texto da seta nativa */
         }
-        
-        div[data-testid="stColumn"] button:hover {
-            border-color: #FFCC00 !important;
-            background-color: rgba(255, 255, 255, 0.1) !important;
+
+        /* RESET TOTAL: Remove qualquer ícone fantástico injetado por pseudo-elementos anteriores */
+        .scuderia-nav-row div[data-testid="stColumn"] button::before,
+        .scuderia-nav-row div[data-testid="stColumn"] button::after {
+            content: "" !important;
+            display: none !important;
+            background: none !important;
         }
-        
-        /* Caixa central do display do mês */
-        .date-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 40px;
-            background-color: rgba(255, 255, 255, 0.02);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            width: 100%;
-            box-sizing: border-box;
+
+        /* Injeção de Ícones Espessos do Google Fonts (Sem emojis) via Pseudo-elemento */
+        .scuderia-nav-row div[data-testid="stColumn"] button::before {
+            font-family: 'Material Symbols Outlined' !important;
+            font-size: 20px !important;
+            font-weight: bold !important;
+            display: inline-block !important;
         }
-        
-        .date-display { 
-            font-size: 12px !important; /* Calibrado perfeitamente para caber 'SETEMBRO 2026' em telas pequenas */
-            font-weight: 700 !important; 
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: white; 
-            text-align: center;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+
+        /* 1. CONFIGURAÇÃO DA SETA ESQUERDA (Voltar - Soft - Vermelho) */
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) button {
+            border: 2px solid #E0001A !important;
+            border-top-left-radius: 10px !important;
+            border-bottom-left-radius: 10px !important;
+            border-right: none !important;
+        }
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) button::before {
+            content: "arrow_back_ios" !important;
+            color: #E0001A !important;
+            margin-left: 6px; /* Centralização do ícone ios */
+        }
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(1) button:hover {
+            background-color: rgba(224, 0, 26, 0.08) !important;
+        }
+
+        /* 2. CONFIGURAÇÃO DO DISPLAY CENTRAL (Médio - Sem clique - Amarelo) */
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(2) button:disabled {
+            border: 2px solid #FFCC00 !important;
+            background-color: #061D39 !important;
+            color: #FFFFFF !important;
+            font-size: 14px !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.5px !important;
+            text-transform: uppercase !important;
+            opacity: 1 !important;
+            cursor: default !important;
+        }
+
+        /* 3. CONFIGURAÇÃO DA SETA DIREITA (Avançar - Hard - Branco) */
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(3) button {
+            border: 2px solid #FFFFFF !important;
+            border-top-right-radius: 10px !important;
+            border-bottom-right-radius: 10px !important;
+            border-left: none !important;
+        }
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(3) button::before {
+            content: "arrow_forward_ios" !important;
+            color: #E0001A !important;
+        }
+        .scuderia-nav-row div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"]:nth-child(3) button:hover {
+            background-color: rgba(255, 255, 255, 0.06) !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
-    # Declaramos st.columns(3) para criar a infraestrutura de 3 colunas no HTML.
-    # O nosso CSS Grid injetado acima vai anular o comportamento padrão e assumir as rédeas.
+    # Geração dos componentes envelopados na classe de blindagem
+    st.markdown('<div class="scuderia-nav-row">', unsafe_allow_html=True)
     c_prev, c_date, c_next = st.columns(3)
     
     with c_prev:
-        if st.button("◀", key="btn_prev"):
+        # Passamos um texto invisível para centralizar e esconder o caractere
+        if st.button("L", key="cockpit_nav_prev", use_container_width=True):
             st.session_state.view_date = (st.session_state.view_date - timedelta(days=1)).replace(day=1)
             st.rerun()
             
     with c_date:
-        st.markdown(f"""
-            <div class='date-container'>
-                <div class='date-display'>{st.session_state.view_date.strftime('%B %Y')}</div>
-            </div>
-        """, unsafe_allow_html=True)
+        current_month_text = st.session_state.view_date.strftime('%B %Y')
+        st.button(current_month_text, key="cockpit_nav_display", disabled=True, use_container_width=True)
         
     with c_next:
-        if st.button("▶", key="btn_next"):
+        if st.button("R", key="cockpit_nav_next", use_container_width=True):
             st.session_state.view_date = (st.session_state.view_date + timedelta(days=32)).replace(day=1)
             st.rerun()
+            
+    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
 
     # --- UI: MAIN CARD (RBR TELEMETRY) ---
