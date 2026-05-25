@@ -1,57 +1,47 @@
-import streamlit as st
-from modules.views import history, home, entry, methods
+# imports
 
-# --- CONFIGURAÇÃO DA PÁGINA (ESTILO F1/RED BULL) ---
+import streamlit as st
+from modules.utils import THEME
+
+# page config 
+# this always needs to be the first thing in the app.py file
 st.set_page_config(
-    page_title="Kimi Finance | RBR Telemetry",
-    layout="wide",
-    page_icon="🏎️"
+    page_title="RBR Telemetry System", # page title
+    page_icon="🏎️", # page icon
+    layout="centered", # layout of the app (centered, wide, or fixed)
+    initial_sidebar_state="collapsed" # initial state of the sidebar (auto, expanded, or collapsed)
 )
 
-# --- CSS PARA ESCONDER ELEMENTOS NATIVOS E MELHORAR UX ---
-# st.markdown("""
-#     <style>
-#         /* Esconde a barra lateral nativa e o cabeçalho padrão */
-#         [data-testid="stSidebarNav"] {display: none;}
-#         [data-testid="stSidebar"] {display: none;}
-#         footer {visibility: hidden;}
-#         header {background-color: rgba(0,0,0,0) !important;}
-        
-#         /* Ajuste de padding para telas mobile/compactas */
-#         .block-container {
-#             padding-top: 1rem;
-#             padding-bottom: 5rem; /* Espaço para não cobrir o conteúdo com menus futuros */
-#         }
-#     </style>
-# """, unsafe_allow_html=True)
+# state initiation
+if "selection" not in st.session_state:
+    st.session_state.selection = "Home" # app routing
 
-# --- GERENCIAMENTO DE NAVEGAÇÃO (SESSION STATE) ---
-if 'selection' not in st.session_state:
-    st.session_state.selection = "Home"
+if "method_focus" not in st.session_state:
+    st.session_state.method_focus = None # card focus
 
-# Lógica para garantir que o foco do método seja resetado ao mudar de tela
-def navigate_to(page):
-    st.session_state.selection = page
-    if page != "Methods":
-        st.session_state.method_focus = None
-    st.rerun()
+# app style
+st.markdown(f"""
+    <style>
+    .stApp {{
+        background-color: #0b111e; /* background color of the app */
+        color: {THEME['text_main']};
+    }}
+    </style>
+""", unsafe_allow_html=True)
 
-# --- ROTEADOR DE TELAS ---
-# Aqui o app decide qual módulo de visão carregar
+# app router
 if st.session_state.selection == "Home":
+    from modules.views import home
     home.show()
-    
-elif st.session_state.selection == "Novo Gasto":
-    entry.show()
-    
-elif st.session_state.selection == "History":
-    history.show()
-    
-elif st.session_state.selection == "Methods":
-    methods.show()
 
-# --- BOTÃO GLOBAL DE SYNC (OPCIONAL NA SIDEBAR INVISÍVEL OU RODAPÉ) ---
-# Se você quiser um botão de refresh que apareça em todas as telas:
-if st.button("🔄 Sync Cloud"):
-    st.cache_data.clear()
-    st.rerun()
+elif st.session_state.selection == "History":
+    from modules.views import history
+    history.show()
+
+elif st.session_state.selection == "Pit Stop":
+    from modules.views import entry
+    entry.show()
+
+elif st.session_state.selection == "Methods":
+    from modules.views import methods
+    methods.show()
