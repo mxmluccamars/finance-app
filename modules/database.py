@@ -22,22 +22,24 @@ class FinancialDB:
             df_types = _self.conn.read(worksheet="payment_types")
             
             # 2. Engine de Merges (Unificação da Telemetria)
-            # Unir transações com métodos de pagamento
             df = df_trans.merge(df_methods, left_on='method_id', right_on='id', suffixes=('', '_meth'))
             
-            # Unir com tipos de pagamento para obter o 'impact' (In/Out)
-            # Verificamos o nome da coluna de ID na aba de tipos
             type_key = 'type_id' if 'type_id' in df_types.columns else 'id'
             df = df.merge(df_types, left_on='type_id', right_on=type_key, suffixes=('', '_type'))
             
-            # Unir com categorias para obter ícones e cores
+            # Unir com categorias aplicando o sufixo explicitamente para preservar a integridade
             df = df.merge(df_cats, left_on='cat_id', right_on='id', suffixes=('', '_cat'))
             
+            # Se a coluna color_cat não foi criada, garante que ela herde o campo color vindo de categorias
+            if 'color_cat' not in df.columns and 'color_cat' in df_cats.columns:
+                df['color_cat'] = df['color_cat']
+            elif 'color_cat' not in df.columns and 'color' in df_cats.columns:
+                df['color_cat'] = df['color']
+
             # 3. Tratamento de Dados
             df['date'] = pd.to_datetime(df['date'])
             
             # Criar coluna de valor real (Sinalização Positiva ou Negativa)
-            # Baseado no seu padrão observado: 'In' ou 'Inflow' são positivos
             df['real_amount'] = df.apply(
                 lambda x: x['amount'] if str(x.get('impact', 'Out')).strip().lower() in ['in', 'inflow'] 
                 else -x['amount'], axis=1

@@ -247,26 +247,60 @@ def show():
     # --- QUICK ACTIONS ---
     render_quick_actions()
 
-    # --- RECENT ACTIVITY ---
+# --- RECENT ACTIVITY COMPONENT (TOTALMENTE INDEPENDENTE) ---
     st.write("### Recent Activity")
     recent = df_full.sort_values(by='date', ascending=False).head(10)
     
+    st.markdown("""
+        <style>
+        .paddock-row {
+            display: flex !important; 
+            justify-content: space-between !important; 
+            align-items: center !important; 
+            padding: 14px 0 !important; 
+            border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+        }
+        .paddock-left { display: flex !important; align-items: center !important; gap: 14px !important; }
+        .paddock-icon { font-size: 26px !important; font-family: 'Material Symbols Outlined' !important; font-weight: normal !important; }
+        .paddock-title { font-weight: 500 !important; font-size: 15px !important; color: white !important; }
+        .paddock-meta { font-size: 11px !important; color: #888888 !important; margin-top: 2px; }
+        .paddock-value { font-weight: bold !important; font-size: 15px !important; font-family: 'Courier New', monospace !important; }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Mapeamento estanque baseado nos nomes reais que estão na sua planilha
+    fallback_theme = {
+        'home': '#1E90FF', 'tech': '#FF8C00', 'health': '#2ECC71', 
+        'food': '#E74C3C', 'motorbike': '#F1C40F', 'apparel': '#9B59B6', 
+        'subscriptions': '#1ABC9C', 'salary': '#00D18E', 'transfers': '#00D18E'
+    }
+
     for _, row in recent.iterrows():
-        cat_color = row['color_cat'] if row['color_cat'] else "#FFFFFF"
-        cat_icon = row['icon'] if row['icon'] else "payments"
-        impact_color = "#2ECC71" if row['real_amount'] >= 0 else THEME['accent_2']
-        prefix = "+" if row['real_amount'] >= 0 else "-"
+        # Identifica o nome da categoria real
+        cat_name_raw = str(row.get('name_cat', row.get('categoria', ''))).strip().lower()
+        
+        # Lógica de extração de cor estável: prioriza a coluna do merge, senão busca no fallback local
+        if pd.notna(row.get('color_cat')) and str(row['color_cat']).startswith('#'):
+            cat_color = str(row['color_cat'])
+        else:
+            cat_color = fallback_theme.get(cat_name_raw, '#FFFFFF')
+            
+        cat_icon = row['icon'] if pd.notna(row['icon']) else "payments"
+        is_positive = row['real_amount'] >= 0
+        
+        impact_color = "#00D18E" if is_positive else THEME['accent_2']
+        prefix = "+" if is_positive else "-"
         
         st.markdown(f"""
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <span class="material-symbols-outlined" style="color: {cat_color}; font-size: 28px;">{cat_icon}</span>
+            <div class="paddock-row">
+                <div class="paddock-left">
+                    <span class="paddock-icon" style="color: {cat_color} !important;">{cat_icon}</span>
                     <div>
-                        <div style="font-weight: 500; font-size: 15px; color: white;">{row['desc']}</div>
-                        <div style="font-size: 11px; color: gray;">{row['date'].strftime('%d %b')} • {row['name']}</div>
+                        <div class="paddock-title">{row['desc']}</div>
+                        <div class="paddock-meta">{row['date'].strftime('%d %b')} • {row['name']}</div>
                     </div>
                 </div>
-                <div style="color: {impact_color}; font-weight: bold; font-size: 15px;">
+                <div class="paddock-value" style="color: {impact_color} !important;">
                     {prefix} R$ {row['amount']:,.2f}
                 </div>
             </div>
