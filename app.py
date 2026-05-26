@@ -21,10 +21,22 @@ if "method_focus" not in st.session_state:
 
 # app style
 st.markdown(f"""
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Titillium+Web:wght@300;400;700&display=swap" rel="stylesheet">
+
     <style>
+    /* Aplica a tipografia na raiz do Streamlit */
     .stApp {{
-        background-color: #0b111e; /* background color of the app */
+        background-color: #0b111e;
         color: {THEME['text_main']};
+        font-family: 'Titillium Web', sans-serif !important;
+    }}
+    
+    /* Força os títulos principais, subheadings e labels do cockpit a usarem a fonte F1/Digital */
+    h1, h2, h3, .rbr-label, .st-activity-title, .st-drag-label {{
+        font-family: 'Orbitron', sans-serif !important;
+        letter-spacing: 1px !important;
     }}
     </style>
 """, unsafe_allow_html=True)

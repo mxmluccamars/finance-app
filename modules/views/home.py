@@ -36,7 +36,7 @@ def show():
     
     # budget limit
     # budget_limit = float(df_profile.iloc[0]['monthly_budget_limit']) if not df_profile.empty else 0
-    budget_limit = 1800.00
+    budget_limit = 3000.00
     
     # text for month navigation component
     view_month_text = view_date.strftime('%B %Y')

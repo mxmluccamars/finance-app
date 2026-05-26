@@ -52,7 +52,7 @@ def render(net_worth, month_out, budget_limit, month_balance, view_month_text):
             font-size: 32px;
             font-weight: 800;
             margin-bottom: 15px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Orbitron', monospace;
         }}
         .rbr-main-card .rbr-budget-container {{
             background-color: rgba(255, 255, 255, 0.05);
@@ -86,17 +86,17 @@ def render(net_worth, month_out, budget_limit, month_balance, view_month_text):
             <div class="rbr-value">R$ {net_worth:,.2f}</div>
             <div class="rbr-budget-container">
                 <div class="rbr-header-row">
-                    <div class="rbr-label" style="color: white; opacity: 0.6;">Budget for {view_month_text}</div>
+                    <div class="rbr-label" style="color: white; opacity: 0.6;">Budget</div>
                     <div class="rbr-label" style="color: white; opacity: 0.6;">Monthly Balance</div>
                 </div>
                 <div class="rbr-header-row" style="margin-top: 4px;">
-                    <div style="font-size: 19px; font-weight: 700;">{left_val_html}</div>
-                    <div style="font-size: 19px; font-weight: 700; color: {balance_text_color};">{right_val_html}</div>
+                    <div style="font-size: 19px; font-weight: 700; font-family: 'Orbitron', monospace;">{left_val_html}</div>
+                    <div style="font-size: 19px; font-weight: 700; font-family: 'Orbitron', monospace; color: {balance_text_color};">{right_val_html}</div>
                 </div>
                 <div class="rbr-progress-bar">
                     <div class="rbr-progress-fill"></div>
                 </div>
-                <div class="rbr-header-row" style="font-size: 11px; opacity: 0.8; font-family: 'Courier New', monospace;">
+                <div class="rbr-header-row" style="font-size: 11px; opacity: 0.8; font-family: 'Orbitron', monospace;">
                     <span>Spent: R$ {month_out:,.2f}</span>
                     <span>Limit: R$ {budget_limit:,.2f}</span>
                 </div>
