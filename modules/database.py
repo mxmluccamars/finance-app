@@ -1,89 +1,54 @@
+# imports
 import streamlit as st
 import pandas as pd
 from streamlit_gsheets import GSheetsConnection
 from modules.utils import THEME
 
-class FinancialDB:
+class FinancialDB: # centralization of the data base interactions
     def __init__(self):
-        # Estabelece a conexão com o Google Sheets utilizando os segredos configurados
+        # establish connection to Google Sheets using streamlit_gsheets
         self.conn = st.connection("gsheets", type=GSheetsConnection)
 
-    @st.cache_data(ttl=3600)  # Cache de 1 hora para dados que mudam pouco
+    @st.cache_data(ttl=600) # cache the data for 10 minutes to improve performance
     def get_full_telemetry(_self):
-        """
-        Lê todas as worksheets e consolida num único DataFrame formatado.
-        Centraliza a lógica de 'merges' para evitar repetição de código.
-        """
+        # protect from errors
         try:
-            # 1. Leitura bruta das tabelas
+            # spreadsheets reading
             df_trans = _self.conn.read(worksheet="transactions")
             df_methods = _self.conn.read(worksheet="payment_methods")
             df_cats = _self.conn.read(worksheet="categories")
             df_types = _self.conn.read(worksheet="payment_types")
-            
-            # 2. Engine de Merges (Unificação da Telemetria)
-            df = df_trans.merge(df_methods, left_on='method_id', right_on='id', suffixes=('', '_meth'))
-            
-            type_key = 'type_id' if 'type_id' in df_types.columns else 'id'
-            df = df.merge(df_types, left_on='type_id', right_on=type_key, suffixes=('', '_type'))
-            
-            # Unir com categorias aplicando o sufixo explicitamente para preservar a integridade
-            df = df.merge(df_cats, left_on='cat_id', right_on='id', suffixes=('', '_cat'))
-            
-            # Se a coluna color_cat não foi criada, garante que ela herde o campo color vindo de categorias
-            if 'color_cat' not in df.columns and 'color_cat' in df_cats.columns:
-                df['color_cat'] = df['color_cat']
-            elif 'color_cat' not in df.columns and 'color' in df_cats.columns:
-                df['color_cat'] = df['color']
 
-            # 3. Tratamento de Dados
-            df['date'] = pd.to_datetime(df['date'])
+            # data processing
+            df = df_trans.merge(df_methods, # right table
+                                left_on="method_id", # looking at the method_id column in transactions
+                                right_on="id", # find the corresponding id in payments_methods
+                                suffixes=("", "_meth")) # add suffixes to differentiate columns with the same name
+            # same for types and categories
+            df = df.merge(df_types,
+                            left_on="type_id",
+                            right_on="id",
+                            suffixes=("", "_type"))
             
-            # Criar coluna de valor real (Sinalização Positiva ou Negativa)
-            df['real_amount'] = df.apply(
-                lambda x: x['amount'] if str(x.get('impact', 'Out')).strip().lower() in ['in', 'inflow'] 
-                else -x['amount'], axis=1
-            )
+            df = df.merge(df_cats,
+                          left_on="cat_id",
+                          right_on="id",
+                          suffixes=("", "_cat"))
             
+            # date formatting
+            df["date"] = pd.to_datetime(df["date"]) # convert date column (str) to datetime format
+
+            # amount formatting
+            df["real_amount"] = df.apply(
+                lambda x: x["amount"] if str(x.get("impact", "out")).strip().lower() == "in" else -x["amount"], axis=1
+            ) # convert the amount to negative if it's an "out" transaction, and keep it positive if it's an "in" transaction
+
+            print(df.head()) # print the first 5 rows of the dataframe to check if everything is correct
             return df
+            
         except Exception as e:
-            st.error(f"Erro na Engine de Dados: {e}")
+            st.error(f"Error loading data: {e}")
+            print(f"Error loading data: {e}")
             return pd.DataFrame()
 
-    @st.cache_data(ttl=3600)
-    def get_profile(_self):
-        """Retorna os dados do perfil do utilizador (ex: limites de orçamento)"""
-        try:
-            return _self.conn.read(worksheet="user_profile")
-        except:
-            return pd.DataFrame()
 
-    def save_transaction(self, new_row_df):
-        """
-        Adiciona uma nova transação diretamente na folha e limpa o cache.
-        Garante que a escrita é direta e a leitura subsequente seja atualizada.
-        """
-        try:
-            # Lemos os dados atuais (sem cache para evitar conflitos de ID)
-            existing_data = self.conn.read(worksheet="transactions", ttl=0)
-            updated_df = pd.concat([existing_data, new_row_df], ignore_index=True)
-            
-            # Atualiza a folha no Google Sheets
-            self.conn.update(worksheet="transactions", data=updated_df)
-            
-            # LIMPEZA CRÍTICA: Força o app a esquecer os dados antigos cacheados
-            st.cache_data.clear()
-            return True
-        except Exception as e:
-            st.error(f"Falha na gravação: {e}")
-            return False
-        
-    @st.cache_data(ttl=3600)
-    def get_categories(_self):
-        """Retorna a lista bruta de categorias para seletores."""
-        return _self.conn.read(worksheet="categories")
-
-    @st.cache_data(ttl=3600)
-    def get_methods(_self):
-        """Retorna a lista bruta de métodos para seletores."""
-        return _self.conn.read(worksheet="payment_methods")
