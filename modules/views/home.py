@@ -5,6 +5,7 @@ import streamlit as st
 from modules.database import FinancialDB
 from modules.utils import THEME
 from modules.components import card_net_worth
+from modules.components import transaction_log
 
 def show():
     # 1. DB engine original
@@ -57,4 +58,4 @@ def show():
     st.write("### Quick Actions (Ainda por modularizar)")
 
     # TODO: Aqui vai entrar o componente unificado de histórico (transaction_log)
-    st.write("### Recent Activity (Ainda por modularizar)")
+    transaction_log.render(df_full.sort_values(by='date', ascending=False).head(10))

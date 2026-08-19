@@ -43,7 +43,7 @@ class FinancialDB: # centralization of the data base interactions
                 lambda x: x["amount"] if str(x.get("impact", "out")).strip().lower() == "in" else -x["amount"], axis=1
             ) # convert the amount to negative if it's an "out" transaction, and keep it positive if it's an "in" transaction
 
-            print(df.head()) # print the first 5 rows of the dataframe to check if everything is correct
+            
             return df
             
         except Exception as e:

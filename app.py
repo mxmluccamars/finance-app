@@ -36,7 +36,7 @@ st.markdown(f"""
     /* Força os títulos principais, subheadings e labels do cockpit a usarem a fonte F1/Digital */
     h1, h2, h3, .rbr-label, .st-activity-title, .st-drag-label {{
         font-family: 'Orbitron', sans-serif !important;
-        letter-spacing: 1px !important;
+        letter-spacing: 1px !important;"
     }}
     </style>
 """, unsafe_allow_html=True)
